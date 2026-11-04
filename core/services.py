@@ -1,9 +1,15 @@
+import logging
+
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 import requests
 from django.core.cache import cache
 from .models import Project, ProjectMembership, Task
 from .repositories import TaskRepository
+
+logger = logging.getLogger(__name__)
 
 
 class TaskService:
@@ -21,7 +27,7 @@ class TaskService:
     def tasks_overdue(queryset=None):
         if queryset is None:
             queryset = TaskRepository.get_queryset()
-            today = timezone.now().date()
+        today = timezone.now().date()
         return queryset.filter(due_date__lt=today).exclude(status="completada")
 
 
@@ -60,3 +66,45 @@ class MembershipService:
     @staticmethod
     def projects_for(user):
         return Project.objects.filter(memberships__user=user).distinct().order_by("id")
+
+
+class NotificationService:
+    @staticmethod
+    def notify_task_created(task):
+        NotificationService._send(task.project_id, {
+            "event": "task_created",
+            "task_id": task.id,
+            "title": task.title,
+        })
+
+    @staticmethod
+    def notify_task_updated(task):
+        NotificationService._send(task.project_id, {
+            "event": "task_updated",
+            "task_id": task.id,
+            "title": task.title,
+            "status": task.status,
+        })
+
+    @staticmethod
+    def notify_task_completed(task):
+        NotificationService._send(task.project_id, {
+            "event": "task_completed",
+            "task_id": task.id,
+            "title": task.title,
+        })
+
+    @staticmethod
+    def _send(project_id, payload):
+        channel_layer = get_channel_layer()
+        try:
+            async_to_sync(channel_layer.group_send)(
+                f"project_{project_id}",
+                {
+                    "type": "task_notification",  # nombre del método en TaskNotificationConsumer
+                    "payload": payload,
+                },
+            )
+        except Exception:
+            # La tarea ya quedó guardada: si Redis falla solo se registra en el log
+            logger.exception("No se pudo enviar la notificación en tiempo real")

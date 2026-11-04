@@ -1,88 +1,3 @@
-# # from django.http import JsonResponse
-# # from rest_framework.decorators import api_view
-# # from rest_framework.response import Response
-# # from .models import Project, Task
-# # from .serializers import ProjectSerializer, TaskSerializer
- 
- 
-# # def health_check(request):
-# #     return JsonResponse({"status": "ok", "service": "TaskFlow API"})
- 
- 
-# # @api_view(["GET"])
-# # def project_list(request):
-# #     projects = Project.objects.all()
-# #     serializer = ProjectSerializer(projects, many=True)
-# #     return Response(serializer.data)
- 
- 
-# # @api_view(["GET"])
-# # def task_list(request):
-# #     tasks = Task.objects.select_related("project").prefetch_related("tags").all()
-# #     serializer = TaskSerializer(tasks, many=True)
-# #     return Response(serializer.data)
-
-
-# from rest_framework import viewsets
-# from .models import Project, Task
-# from .serializers import ProjectSerializer, TaskSerializer
-
-
-# class ProjectViewSet(viewsets.ModelViewSet):
-#     queryset = Project.objects.all()
-#     serializer_class = ProjectSerializer
-
-
-# class TaskViewSet(viewsets.ModelViewSet):
-#     queryset = Task.objects.select_related("project").prefetch_related("tags").all()
-#     serializer_class = TaskSerializer
-
-
-# # from django.shortcuts import render
-
-# # # Create your views here.
-# # from django.http import JsonResponse
-
-# # def health_check(request):
-# # return JsonResponse({"status": "ok", "service": "1era clase Python (Que Lio) API"})
-
-
-# # from django.http import JsonResponse
-# # from rest_framework.decorators import api_view
-# # from rest_framework.response import Response
-# # from .models import Project, Task
-# # from .serializers import ProjectSerializer, TaskSerializer
-
-
-# # def health_check(request):
-# # return JsonResponse({"status": "ok", "service": "TaskFlow API"})
-
-
-# # @api_view(["GET"])
-# # def project_list(request):
-# # projects = Project.objects.all()
-# # serializer = ProjectSerializer(projects, many=True)
-# # return Response(serializer.data)
-
-# # @api_view(["GET"])
-# # def task_list(request):
-# # tasks = Task.objects.select_related("project").prefetch_related("tags").all()
-# # serializer = TaskSerializer(tasks, many=True)
-# # return Response(serializer.data)
-
-# # from rest_framework import viewsets
-# # from .models import Project, Task
-# # from .serializers import ProjectSerializer, TaskSerializer
-
-
-# # class ProjectViewSet(viewsets.ModelViewSet):
-# # queryset = Project.objects.all()
-# # serializer_class = ProjectSerializer
-
-
-# # class TaskViewSet(viewsets.ModelViewSet):
-# # queryset = Task.objects.select_related("project").prefetch_related("tags").all()
-# # serializer_class = TaskSerializer
 import logging
 from django.http import JsonResponse
 from rest_framework import viewsets
@@ -97,7 +12,7 @@ from rest_framework import generics, permissions
 from .serializers_auth import RegisterSerializer
 from rest_framework.exceptions import PermissionDenied
 from .permissions import IsProjectAdminOrReadOnly
-from .services import MembershipService, TaskService
+from .services import MembershipService, NotificationService, TaskService
 from django.db import transaction
 from .models import Project, ProjectMembership
 from rest_framework.permissions import IsAuthenticated
@@ -146,17 +61,20 @@ class TaskViewSet(viewsets.ModelViewSet):
  
     def perform_create(self, serializer):
         self.check_project_admin(serializer.validated_data["project"])
-        serializer.save(owner=self.request.user)
- 
+        task = serializer.save(owner=self.request.user)
+        NotificationService.notify_task_created(task)
+
     def perform_update(self, serializer):
         if "project" in serializer.validated_data:
             self.check_project_admin(serializer.validated_data["project"])
-        serializer.save()
+        task = serializer.save()
+        NotificationService.notify_task_updated(task)
 
     @action(detail=True, methods=["post"])
     def complete(self, request, pk=None):
         task = self.get_object()
         TaskService.mark_completed(task)
+        NotificationService.notify_task_completed(task)
         return Response(self.get_serializer(task).data)
 
     @action(detail=False, methods=["get"])
