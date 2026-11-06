@@ -8,7 +8,4 @@ router.register(r"tasks", views.TaskViewSet, basename="task")
 
 urlpatterns = [
     path("", include(router.urls)),
-    #path("health/", views.health_check, name="health_check"),
-    #path("projects/", views.project_list, name="project_list"),
-    #path("tasks/", views.task_list, name="task_list"),
 ]
