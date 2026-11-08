@@ -86,11 +86,15 @@ packaging==26.3
 pandas==2.3.3
 pandocfilters==1.5.1
 parso==0.8.7
+pexpect==4.9.0
 pillow==12.3.0
 platformdirs==4.11.5
 prometheus_client==0.26.0
 prompt_toolkit==3.0.53
 psutil==7.2.2
+psycopg==3.3.8
+psycopg-binary==3.3.8
+ptyprocess==0.7.0
 pure_eval==0.2.3
 pycparser==3.0
 Pygments==2.21.0
@@ -101,7 +105,6 @@ python-dateutil==2.9.0.post0
 python-dotenv==1.2.3
 python-json-logger==4.2.0
 pytz==2025.2
-pywinpty==3.0.5; sys_platform == 'win32'
 PyYAML==6.0.3
 pyzmq==27.2.0
 referencing==0.37.0
@@ -132,5 +135,6 @@ wcwidth==0.8.2
 webcolors==25.10.0
 webencodings==0.6.1
 websocket-client==1.9.0
+whitenoise==6.12.0
 widgetsnbextension==4.0.16
 zope.interface==8.7
