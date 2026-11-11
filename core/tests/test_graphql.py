@@ -6,7 +6,7 @@ from django.test import TestCase, override_settings
 from rest_framework.test import APIClient
 from rest_framework_simplejwt.tokens import AccessToken
 
-from .models import Project, ProjectMembership, Task
+from core.models import Project, ProjectMembership, Task
 
 
 @override_settings(
